@@ -352,18 +352,18 @@ bc.evaluateResults <- function(xlist,
 
 }
 
-## Batch correction with NPmatch
+## Batch correction with NPM
 ## https://github.com/bigomics/NPM
-NPmatch <- function(X,
-                    y,
-                    dist.method = "cor",
-                    center.x = TRUE,
-                    center.m = TRUE,
-                    knn = 1,
-                    sdtop = 2000,
-                    return.B = FALSE,
-                    use.design = TRUE,
-                    use.cov = FALSE) {
+NPM <- function(X,
+                y,
+                dist.method = "cor",
+                center.x = TRUE,
+                center.m = TRUE,
+                knn = 1,
+                sdtop = 2000,
+                return.B = FALSE,
+                use.design = TRUE,
+                use.cov = FALSE) {
 
   ## Nearest-neighbour matching for batch correction.
   ## Creates a fully paired dataset with nearest
@@ -389,11 +389,11 @@ NPmatch <- function(X,
   }
 
   if (dist.method == "cor") {
-    message("[NPmatch] computing correlation matrix D...")
+    message("[NPM] computing correlation matrix D...")
     ## D <- 1 - crossprod(scale(dX)) / (nrow(dX) - 1) ## faster
     D <- 1 - cor(dX)
   } else {
-    message("[NPmatch] computing distance matrix D...\n")
+    message("[NPM] computing distance matrix D...\n")
     D <- as.matrix(stats::dist(t(dX)))
   }
 
@@ -401,12 +401,12 @@ NPmatch <- function(X,
 
   ## Find neighbours
   if (knn > 1) {
-    message(paste0("[NPmatch] finding ", knn, "-nearest neighbours..."))
+    message(paste0("[NPM] finding ", knn, "-nearest neighbours..."))
     bb <- apply(D, 1, function(r) tapply(r, y1, function(s) head(names(sort(s)), knn)))
     B <- do.call(rbind, lapply(bb, function(x) unlist(x)))
     colnames(B) <- unlist(mapply(rep, names(bb[[1]]), sapply(bb[[1]], length)), use.names = FALSE)
   } else {
-    message("[NPmatch] finding nearest neighbours...")
+    message("[NPM] finding nearest neighbours...")
     B <- t(apply(D, 1, function(r) tapply(r, y1, function(s) names(which.min(s)))))
   }
   rownames(B) <- colnames(X)
@@ -423,7 +423,7 @@ NPmatch <- function(X,
   dim(full.X)
 
   ## Remove pairing effect
-  message("[NPmatch] correcting for pairing effects...")
+  message("[NPM] correcting for pairing effects...")
   design <- stats::model.matrix(~full.y)
   if (use.cov == FALSE) {
     if (!use.design)
@@ -437,7 +437,7 @@ NPmatch <- function(X,
   }
 
   ## Contract to original samples
-  message("[NPmatch] matching result...")
+  message("[NPM] matching result...")
   full.idx <- rownames(B)[kk]
   cX <- do.call(cbind, tapply(1:ncol(full.X), full.idx,
     function(i) rowMeans(full.X[, i, drop = FALSE])))
