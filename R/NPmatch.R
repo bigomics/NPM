@@ -10,11 +10,26 @@
 #' @param return.B Logical for whether returing the full set of pairs along with the corrected data matrix
 #' @param use.design Logical for whether using Limma's design matrix
 #' @param use.cov Logical for whether using a scaled model matrix of the full pairs
-#' 
-#' @examples# Load the example dataset provided and run:
-#' nX <- normalize.log2CPM(X)
+#'
+#' @return If \code{return.B = FALSE} (default), returns a batch-corrected expression matrix
+#'   with the same dimensions as the input matrix X. If \code{return.B = TRUE}, returns a list
+#'   containing two elements:
+#'   \itemize{
+#'     \item \code{X}: The batch-corrected expression matrix
+#'     \item \code{pairings}: A matrix showing the nearest neighbor pairings used for batch correction,
+#'           with samples as rows and batch groups as columns
+#'   }
+#'   The batch correction is performed using nearest neighbor matching followed by removal of
+#'   pairing effects while preserving biological differences between conditions.
+#'
+#' @examples
+#' # Load the example dataset provided and run:
+#' data(GSE10846.Expression, package = "NPmatch")
+#' data(GSE10846.Metadata, package = "NPM")
+#' nX <- normalize.log2CPM(GSE10846.Expression)
 #' nX <- limma::normalizeQuantiles(nX)
-#' cX <- NPmatch(nX)
+#' y <- GSE10846.Metadata[colnames(nX), "dlbcl.type"]
+#' cX <- NPmatch(nX, y)
 #'
 #' @export
 NPmatch <- function(X,
