@@ -1,7 +1,7 @@
 #' Batch correction with NPmatch
 #'
 #' @param X Normalized data matrix: features/genes in rows; samples in columns
-#' @param y Factor vector indicating batch for each sample
+#' @param y Factor vector indicating pheno for each sample
 #' @param dist.method Distance metric to use for matching ('cor' or 'euclidean')
 #' @param center.x Logical for whether to center gene expression by row means
 #' @param center.m Logical for whether to center expression by batch means
