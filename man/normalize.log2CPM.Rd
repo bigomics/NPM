@@ -14,13 +14,16 @@ normalize.log2CPM(X, total = 1e+06, prior = 1)
 \item{prior}{offset integer added prior log transformation}
 }
 \value{
-CPM normalized data matrix
+A matrix of log2-transformed counts per million (CPM) normalized expression data.
+  The returned matrix has the same dimensions as the input matrix X, with genes as rows
+  and samples as columns. Values are log2(CPM + prior) where CPM is calculated by
+  normalizing each sample to the target total count (default 1e6).
 }
 \description{
 Normalize Data
 }
 \examples{
-# load the example dataset provided and run:
-nX <- normalize.log2CPM(X)
-
+# Load the example dataset provided and run:
+data(GSE10846.Expression, package = "NPM")
+nX <- normalize.log2CPM(GSE10846.Expression)
 }

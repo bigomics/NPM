@@ -38,12 +38,28 @@ NPmatch(
 
 \item{use.cov}{Logical for whether using a scaled model matrix of the full pairs}
 }
+\value{
+If \code{return.B = FALSE} (default), returns a batch-corrected expression matrix
+  with the same dimensions as the input matrix X. If \code{return.B = TRUE}, returns a list
+  containing two elements:
+  \itemize{
+    \item \code{X}: The batch-corrected expression matrix
+    \item \code{pairings}: A matrix showing the nearest neighbor pairings used for batch correction,
+          with samples as rows and batch groups as columns
+  }
+  The batch correction is performed using nearest neighbor matching followed by removal of
+  pairing effects while preserving biological differences between conditions.
+}
 \description{
 Batch correction with NPmatch
 }
 \examples{
 # Load the example dataset provided and run:
-nX <- normalize.log2CPM(X)
-cX <- NPmatch(nX)
+data(GSE10846.Expression, package = "NPmatch")
+data(GSE10846.Metadata, package = "NPM")
+nX <- normalize.log2CPM(GSE10846.Expression)
+nX <- limma::normalizeQuantiles(nX)
+y <- GSE10846.Metadata[colnames(nX), "dlbcl.type"]
+cX <- NPmatch(nX, y)
 
 }
