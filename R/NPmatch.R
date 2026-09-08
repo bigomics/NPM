@@ -98,15 +98,40 @@ NPmatch <- function(X,
 
     ## Remove pairing effect
     message("[NPmatch] correcting for pairing effects...")
-    design <- stats::model.matrix(~full.y)
     if (use.cov == FALSE) {
-        if (!use.design)
-            design <- matrix(1, ncol(full.X), 1)
-        full.X <- limma::removeBatchEffect(full.X, batch = full.pairs, design = design)
+        ## Closed-form equivalent of:
+        ##   design <- model.matrix(~full.y); if(!use.design) design <- matrix(1, ncol(full.X), 1)
+        ##   limma::removeBatchEffect(full.X, batch = full.pairs, design = design)
+        ##
+        ## full.pairs (batch) and full.y (design) form a complete, balanced
+        ## two-way layout: every original sample contributes exactly ncol(B)
+        ## columns to full.X, identically structured across samples (columns
+        ## are laid out as ncol(B) consecutive blocks of nrow(B) samples, one
+        ## block per matched group). For such a balanced/orthogonal layout,
+        ## the batch main effect that removeBatchEffect's OLS fit would
+        ## remove is exactly each sample's own mean deviation from the grand
+        ## mean -- independent of whether the group design is included or
+        ## not. This avoids fitting an n-level factor regression (the
+        ## dominant cost as samples and/or groups grow) in favour of a
+        ## handful of vectorised matrix subtractions.
+        n <- nrow(B)
+        g <- ncol(B)
+        samp.mean <- matrix(0, nrow(full.X), n)
+        for (j in 1:g) {
+            cols <- ((j - 1) * n + 1):(j * n)
+            samp.mean <- samp.mean + full.X[, cols]
+        }
+        samp.mean <- samp.mean / g
+        grand.mean <- rowMeans(samp.mean)
+        for (j in 1:g) {
+            cols <- ((j - 1) * n + 1):(j * n)
+            full.X[, cols] <- full.X[, cols] - samp.mean + grand.mean
+        }
     } else {
-        V <- model.matrix(~ 0 + full.pairs)
+        design <- stats::model.matrix(~full.y)
         if (!use.design)
             design <- matrix(1, ncol(full.X), 1)
+        V <- model.matrix(~ 0 + full.pairs)
         full.X <- limma::removeBatchEffect(full.X, covariates = scale(V), design = design)
     }
 
