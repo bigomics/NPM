@@ -32,21 +32,24 @@ NPmatch <- function(X,
     ## Creates a fully paired dataset with nearest
     ## matching neighbours when pairs are missing.
 
+    ## Guard against unstable k-NN matching on very small sample sizes
+    knn <- ifelse(ncol(X) <= 3, 1, knn)
+
     ## Compute distance matrix for NNM-pairing
     y1 <- paste0("y=", y)
     dX <- X
 
     ## Reduce for speed
     if(sdtop > nrow(dX)) sdtop <- nrow(dX)
-    dX <- dX[order(-apply(dX, 1, sd)),][1:sdtop, ]
+    dX <- dX[order(-apply(dX, 1, sd, na.rm = TRUE)),][1:sdtop, ]
 
     if (center.x) {
         dX <- dX - rowMeans(dX, na.rm = TRUE)
     }
-        
+
     if (center.m) {
         ## Center per condition group (takes out pheno differences)
-        mX <- tapply(1:ncol(dX), y1, function(i) rowMeans(dX[, i, drop = FALSE]))
+        mX <- tapply(1:ncol(dX), y1, function(i) rowMeans(dX[, i, drop = FALSE], na.rm = TRUE))
         mX <- do.call(cbind, mX)
         dX <- dX - mX[, y1]
     }
@@ -63,18 +66,26 @@ NPmatch <- function(X,
     D[is.na(D)] <- 0
 
     ## Find neighbours
+    B <- matrix(0, 0, 0)
     if (knn > 1) {
         message(paste0("[NPmatch] finding ", knn, "-nearest neighbours..."))
         bb <- apply(D, 1, function(r) tapply(r, y1, function(s) head(names(sort(s)), knn)))
         B <- do.call(rbind, lapply(bb, function(x) unlist(x)))
         colnames(B) <- unlist(mapply(rep, names(bb[[1]]), sapply(bb[[1]], length)), use.names = FALSE)
-    } else {
+    }
+    if (knn == 1 || nrow(B) != ncol(X)) {
         message("[NPmatch] finding nearest neighbours...")
         B <- t(apply(D, 1, function(r) tapply(r, y1, function(s) names(which.min(s)))))
     }
-    rownames(B) <- colnames(X)
+
+    ## Sanity check. Bail out
+    if (nrow(B) != ncol(X)) {
+        message("[NPmatch] WARNING. FATAL ERROR. returning uncorrected X.")
+        return(X)
+    }
 
     ## Ensure sample is always present in own group
+    rownames(B) <- colnames(X)
     idx <- cbind(1:nrow(B), match(y1, colnames(B)))
     B[idx] <- rownames(B)
 
